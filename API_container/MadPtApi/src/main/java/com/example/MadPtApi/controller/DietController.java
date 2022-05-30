@@ -19,10 +19,8 @@ public class DietController {
 
     @PostMapping
     public PostResponseDto saveDiet(@RequestHeader("member_id") Long id, @RequestBody DietSaveRequestDto dietSaveRequestDto) {
-        // timestamp -> LocalDateTime 변환
-        LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(dietSaveRequestDto.getDate()), TimeZone.getDefault().toZoneId());
-
-        Long diet_id = dietService.addDietList(id, localDateTime, dietSaveRequestDto.getSimpleTotalKcal(), dietSaveRequestDto.getDietType(), dietSaveRequestDto.getDietList());
+        Long date = dietSaveRequestDto.getDate();
+        Long diet_id = dietService.addDietList(id, date, dietSaveRequestDto.getSimpleTotalKcal(), dietSaveRequestDto.getDietType(), dietSaveRequestDto.getDietList());
         System.out.println("diet saved : " + diet_id);
         PostResponseDto postResponseDto;
         if (diet_id != 0L) {

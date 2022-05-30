@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,12 +33,17 @@ public class DietService {
      * 식단 List 저장
      */
     @Transactional
-    public Long addDietList(Long clientId, LocalDateTime date, double simpleTotalKcal, String dietType, List<DietDto> dietDtoList) {
+    public Long addDietList(Long clientId, Long date, double simpleTotalKcal, String dietType, List<DietDto> dietDtoList) {
         List<DietFood> dietFoodList = new ArrayList<>();
         // 회원 엔티티 조회
         Member member = memberRepository.findByClientId(clientId); // 예외 처리 해야됌
 
         // 존재하는지 확인 해보고 update 처리 해야됌
+        Timestamp timestamp = new Timestamp(date);
+        LocalDate localDate = timestamp.toLocalDateTime().toLocalDate();
+        LocalDateTime startOfDay = localDate.atStartOfDay();
+        LocalDateTime endOfDay = LocalTime.MAX.atDate(localDate);
+        Diet exitedDiet = dietRepository.findDietByDietTypeAndDietDate(member.getId(), DietType.valueOf(dietType), startOfDay, endOfDay);
 
         for (DietDto dto : dietDtoList) {
             DietFood dietFood = null;
@@ -67,8 +73,21 @@ public class DietService {
             // 식단 리스트에 저장
             dietFoodList.add(dietFood);
         }
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(date), TimeZone.getDefault().toZoneId());
 
-        Diet diet = Diet.createDiet(member, date, DietType.valueOf(dietType), simpleTotalKcal, dietFoodList);
+        // 식단 수정 코드 개발중
+        Diet diet;
+        if (exitedDiet == null) {
+            diet = Diet.createDiet(member, localDateTime, DietType.valueOf(dietType), simpleTotalKcal, dietFoodList);
+        } else {
+            diet = Diet.builder()
+                    .id(exitedDiet.getId())
+                    .member(member)
+                    .dietDate(localDateTime)
+                    .dietType(DietType.valueOf(dietType))
+                    .dietFoodList(dietFoodList)
+                    .build();
+        }
         dietRepository.save(diet);
         return diet.getId();
     }
@@ -99,7 +118,7 @@ public class DietService {
             for (DietFoodDto dietFoodDto : dto.getDietFoodDtoList()) {
                 totalKcal += dietFoodDto.getDietKcal();
             }
-            hashMap.put(dto.getDietType().toString(), totalKcal);
+            hashMap.put(dto.getDietType(), totalKcal);
         }
 
         return hashMap;

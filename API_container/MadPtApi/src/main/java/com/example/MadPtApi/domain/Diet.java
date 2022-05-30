@@ -1,7 +1,6 @@
 package com.example.MadPtApi.domain;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -13,6 +12,9 @@ import static javax.persistence.FetchType.LAZY;
 @Entity
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Diet {
 
     @Id
